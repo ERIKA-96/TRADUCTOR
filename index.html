@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Traductor de Lenguas Indígenas "Ra Hñä"</title>
+
+    <link rel="stylesheet" href="estilos.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+</head>
+
+<body>
+
+    <!-- ENCABEZADO -->
+
+    <header>
+
+        <div class="logoTitulo">
+
+            <div class="logo">
+                <img src="img/LOGO TRADUCTOR-PROTOTIPO.png" alt="logo">
+            </div>
+
+            <h1>
+                Traductor de <br>
+                Lenguas Indígenas
+            </h1>
+
+            <div class="tituloOt">
+                <h3>"Ra Hñä"</h3>
+                <h4>"La voz de la lengua"</h4>
+            </div>
+
+        </div>
+
+        <div class="piramide">
+            <img src="img/PIRAMIDE.png" alt="piramide">
+        </div>
+
+    </header>
+
+
+    <!-- MENÚ DE NAVEGACIÓN -->
+
+    <div class="linea">
+
+    <a href="index.html" class="activo">Traductor</a>
+
+    <a href="informativa.html">Sobre el otomí</a>
+
+    <a href="equipo.html">Nuestro equipo</a>
+
+</div>
+
+
+
+    <!-- TRADUCTOR -->
+
+    <main class="contenedor">
+
+        <div class="idioma">
+
+            <h2>Traducir a:</h2>
+
+            <select>
+
+                <option>Otomí</option>
+
+            </select>
+
+        </div>
+
+
+        <div class="menus">
+
+            <div class="bloque">
+
+                <label>
+
+                    <i class="fa-regular fa-folder"></i>
+
+                    Selecciona una categoría
+
+                </label>
+
+                <select id="categoria">
+
+                    <option>Saludos</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="bloque">
+
+                <label>
+
+                    <i class="fa-regular fa-file-lines"></i>
+
+                    Selecciona una palabra
+
+                </label>
+
+                <select id="palabras">
+
+                    <option>Hola</option>
+
+                </select>
+
+
+                <img
+                    id="imagenPalabra"
+                    class="imagenPalabra"
+                    src=""
+                    alt="">
+
+            </div>
+
+        </div>
+
+
+        <button onclick="traducir()">
+
+            TRADUCIR
+
+        </button>
+
+
+        <div class="resultado">
+
+            <label>
+
+                <i class="fa-solid fa-language"></i>
+
+                Traducción
+
+            </label>
+
+
+            <div class="cajaResultado">
+
+                <p id="textoTraducido"></p>
+
+                <i
+                    id="btnAudio"
+                    class="fa-solid fa-volume-high audio">
+                </i>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
