@@ -1,8 +1,9 @@
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -11,11 +12,21 @@ public class Servidor {
 
     public static void main(String[] args) throws Exception {
 
-        HttpServer server = HttpServer.create(
-            new InetSocketAddress(8000), 0
+        // Render proporciona el puerto mediante la variable PORT.
+        // Si ejecutas el proyecto localmente, utilizará el puerto 8000.
+        int puerto = Integer.parseInt(
+            System.getenv().getOrDefault("PORT", "8000")
         );
 
+        HttpServer server = HttpServer.create(
+            new InetSocketAddress("0.0.0.0", puerto), 0
+        );
+
+
+        // =====================================================
         // CATEGORIAS
+        // =====================================================
+
         server.createContext("/categorias", (HttpExchange exchange) -> {
 
             StringBuilder json = new StringBuilder("[");
@@ -26,14 +37,14 @@ public class Servidor {
                 Statement st = con.createStatement();
 
                 ResultSet rs = st.executeQuery(
-                    "SELECT * FROM CATEGORIA"
+                    "SELECT * FROM \"CATEGORIA\""
                 );
 
                 boolean primero = true;
 
-                while(rs.next()) {
+                while (rs.next()) {
 
-                    if(!primero){
+                    if (!primero) {
                         json.append(",");
                     }
 
@@ -51,9 +62,12 @@ public class Servidor {
 
                 json.append("]");
 
+                rs.close();
+                st.close();
                 con.close();
 
-            } catch(Exception e){
+            } catch (Exception e) {
+
                 e.printStackTrace();
             }
 
@@ -62,25 +76,33 @@ public class Servidor {
             );
 
             exchange.getResponseHeaders().add(
-                "Content-Type", "application/json"
+                "Content-Type",
+                "application/json; charset=UTF-8"
             );
 
-            byte[] respuesta = json.toString().getBytes();
+            byte[] respuesta =
+                json.toString().getBytes(StandardCharsets.UTF_8);
 
             exchange.sendResponseHeaders(
-                200, respuesta.length
+                200,
+                respuesta.length
             );
 
-            OutputStream os = exchange.getResponseBody();
-            os.write(respuesta);
-            os.close();
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(respuesta);
+            }
 
         });
 
+
+        // =====================================================
         // PALABRAS
+        // =====================================================
+
         server.createContext("/palabras", (HttpExchange exchange) -> {
 
             String query = exchange.getRequestURI().getQuery();
+
             String idCategoria = query.split("=")[1];
 
             StringBuilder json = new StringBuilder("[");
@@ -91,14 +113,15 @@ public class Servidor {
                 Statement st = con.createStatement();
 
                 ResultSet rs = st.executeQuery(
-                    "SELECT * FROM PALABRA WHERE idCateg = " + idCategoria
+                    "SELECT * FROM \"PALABRA\" WHERE \"idCateg\" = "
+                    + idCategoria
                 );
 
                 boolean primero = true;
 
-                while(rs.next()) {
+                while (rs.next()) {
 
-                    if(!primero){
+                    if (!primero) {
                         json.append(",");
                     }
 
@@ -116,9 +139,12 @@ public class Servidor {
 
                 json.append("]");
 
+                rs.close();
+                st.close();
                 con.close();
 
-            } catch(Exception e){
+            } catch (Exception e) {
+
                 e.printStackTrace();
             }
 
@@ -127,25 +153,33 @@ public class Servidor {
             );
 
             exchange.getResponseHeaders().add(
-                "Content-Type", "application/json"
+                "Content-Type",
+                "application/json; charset=UTF-8"
             );
 
-            byte[] respuesta = json.toString().getBytes();
+            byte[] respuesta =
+                json.toString().getBytes(StandardCharsets.UTF_8);
 
             exchange.sendResponseHeaders(
-                200, respuesta.length
+                200,
+                respuesta.length
             );
 
-            OutputStream os = exchange.getResponseBody();
-            os.write(respuesta);
-            os.close();
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(respuesta);
+            }
 
         });
 
+
+        // =====================================================
         // TRADUCCION
+        // =====================================================
+
         server.createContext("/traducir", (HttpExchange exchange) -> {
 
             String query = exchange.getRequestURI().getQuery();
+
             String idPalabra = query.split("=")[1];
 
             String json = "{}";
@@ -156,27 +190,40 @@ public class Servidor {
                 Statement st = con.createStatement();
 
                 ResultSet rs = st.executeQuery(
-                    "SELECT * FROM TRADUCCION WHERE idPala = " + idPalabra
+                    "SELECT * FROM \"TRADUCCION\" WHERE \"idPala\" = "
+                    + idPalabra
                 );
 
-                if(rs.next()) {
+                if (rs.next()) {
+
+                    String traduccion =
+                        rs.getString("palabraTraducida");
+
+                    String audio =
+                        rs.getString("audio");
+
+                    String imagen =
+                        rs.getString("imagen");
 
                     json = "{"
-                    + "\"traduccion\":\""
-                    + rs.getString("palabraTraducida")
-                    + "\","
-                    + "\"audio\":\""
-                    + rs.getString("audio")
-                    + "\","
-                    + "\"imagen\":\""
-                    + rs.getStrin   g("imagen")
-                    + "\""
-                    + "}";
+                        + "\"traduccion\":\""
+                        + traduccion
+                        + "\","
+                        + "\"audio\":\""
+                        + audio
+                        + "\","
+                        + "\"imagen\":\""
+                        + imagen
+                        + "\""
+                        + "}";
                 }
 
+                rs.close();
+                st.close();
                 con.close();
 
-            } catch(Exception e){
+            } catch (Exception e) {
+
                 e.printStackTrace();
             }
 
@@ -185,25 +232,37 @@ public class Servidor {
             );
 
             exchange.getResponseHeaders().add(
-                "Content-Type", "application/json"
+                "Content-Type",
+                "application/json; charset=UTF-8"
             );
 
-            byte[] respuesta = json.getBytes();
+            byte[] respuesta =
+                json.getBytes(StandardCharsets.UTF_8);
 
             exchange.sendResponseHeaders(
-                200, respuesta.length
+                200,
+                respuesta.length
             );
 
-            OutputStream os = exchange.getResponseBody();
-            os.write(respuesta);
-            os.close();
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(respuesta);
+            }
 
         });
+
+
+        // =====================================================
+        // INICIAR SERVIDOR
+        // =====================================================
 
         server.start();
 
         System.out.println(
-            "Servidor iniciado en http://localhost:8000"
+            "Servidor iniciado en el puerto " + puerto
+        );
+
+        System.out.println(
+            "Conectado a Supabase PostgreSQL"
         );
     }
 }
