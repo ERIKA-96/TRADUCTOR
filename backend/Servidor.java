@@ -1,19 +1,27 @@
+```java
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.OutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
 public class Servidor {
 
+    // Carpeta donde Render tendrá los archivos de la página
+    private static final Path WEB_DIR = Paths.get("/app/site");
+
     public static void main(String[] args) throws Exception {
 
-        // Render proporciona el puerto mediante la variable PORT.
-        // Si ejecutas el proyecto localmente, utilizará el puerto 8000.
+        // Render proporciona el puerto mediante PORT
         int puerto = Integer.parseInt(
             System.getenv().getOrDefault("PORT", "8000")
         );
@@ -71,26 +79,7 @@ public class Servidor {
                 e.printStackTrace();
             }
 
-            exchange.getResponseHeaders().add(
-                "Access-Control-Allow-Origin", "*"
-            );
-
-            exchange.getResponseHeaders().add(
-                "Content-Type",
-                "application/json; charset=UTF-8"
-            );
-
-            byte[] respuesta =
-                json.toString().getBytes(StandardCharsets.UTF_8);
-
-            exchange.sendResponseHeaders(
-                200,
-                respuesta.length
-            );
-
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(respuesta);
-            }
+            enviarJSON(exchange, json.toString());
 
         });
 
@@ -148,26 +137,7 @@ public class Servidor {
                 e.printStackTrace();
             }
 
-            exchange.getResponseHeaders().add(
-                "Access-Control-Allow-Origin", "*"
-            );
-
-            exchange.getResponseHeaders().add(
-                "Content-Type",
-                "application/json; charset=UTF-8"
-            );
-
-            byte[] respuesta =
-                json.toString().getBytes(StandardCharsets.UTF_8);
-
-            exchange.sendResponseHeaders(
-                200,
-                respuesta.length
-            );
-
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(respuesta);
-            }
+            enviarJSON(exchange, json.toString());
 
         });
 
@@ -227,25 +197,85 @@ public class Servidor {
                 e.printStackTrace();
             }
 
-            exchange.getResponseHeaders().add(
-                "Access-Control-Allow-Origin", "*"
-            );
+            enviarJSON(exchange, json);
 
-            exchange.getResponseHeaders().add(
-                "Content-Type",
-                "application/json; charset=UTF-8"
-            );
+        });
 
-            byte[] respuesta =
-                json.getBytes(StandardCharsets.UTF_8);
 
-            exchange.sendResponseHeaders(
-                200,
-                respuesta.length
-            );
+        // =====================================================
+        // PAGINA WEB
+        // =====================================================
 
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(respuesta);
+        server.createContext("/", (HttpExchange exchange) -> {
+
+            try {
+
+                String ruta = exchange.getRequestURI().getPath();
+
+                // Si entra directamente al dominio
+                if (ruta.equals("/")) {
+                    ruta = "/index.html";
+                }
+
+                // Evitar acceso fuera de la carpeta de la página
+                Path archivo = WEB_DIR
+                    .resolve(ruta.substring(1))
+                    .normalize();
+
+                if (!archivo.startsWith(WEB_DIR)) {
+
+                    enviarTexto(
+                        exchange,
+                        403,
+                        "Acceso no permitido"
+                    );
+
+                    return;
+                }
+
+                if (!Files.exists(archivo) ||
+                    Files.isDirectory(archivo)) {
+
+                    enviarTexto(
+                        exchange,
+                        404,
+                        "Archivo no encontrado"
+                    );
+
+                    return;
+                }
+
+                byte[] contenido = Files.readAllBytes(archivo);
+
+                String tipo = obtenerTipoContenido(
+                    archivo.toString()
+                );
+
+                exchange.getResponseHeaders().set(
+                    "Content-Type",
+                    tipo
+                );
+
+                exchange.sendResponseHeaders(
+                    200,
+                    contenido.length
+                );
+
+                try (OutputStream os =
+                         exchange.getResponseBody()) {
+
+                    os.write(contenido);
+                }
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+
+                enviarTexto(
+                    exchange,
+                    500,
+                    "Error interno del servidor"
+                );
             }
 
         });
@@ -262,7 +292,142 @@ public class Servidor {
         );
 
         System.out.println(
+            "Página web disponible desde Render"
+        );
+
+        System.out.println(
             "Conectado a Supabase PostgreSQL"
         );
     }
+
+
+    // =========================================================
+    // ENVIAR JSON
+    // =========================================================
+
+    private static void enviarJSON(
+        HttpExchange exchange,
+        String contenido
+    ) throws IOException {
+
+        exchange.getResponseHeaders().set(
+            "Access-Control-Allow-Origin",
+            "*"
+        );
+
+        exchange.getResponseHeaders().set(
+            "Content-Type",
+            "application/json; charset=UTF-8"
+        );
+
+        byte[] respuesta =
+            contenido.getBytes(StandardCharsets.UTF_8);
+
+        exchange.sendResponseHeaders(
+            200,
+            respuesta.length
+        );
+
+        try (OutputStream os =
+                 exchange.getResponseBody()) {
+
+            os.write(respuesta);
+        }
+    }
+
+
+    // =========================================================
+    // ENVIAR TEXTO
+    // =========================================================
+
+    private static void enviarTexto(
+        HttpExchange exchange,
+        int codigo,
+        String contenido
+    ) throws IOException {
+
+        byte[] respuesta =
+            contenido.getBytes(StandardCharsets.UTF_8);
+
+        exchange.getResponseHeaders().set(
+            "Content-Type",
+            "text/plain; charset=UTF-8"
+        );
+
+        exchange.sendResponseHeaders(
+            codigo,
+            respuesta.length
+        );
+
+        try (OutputStream os =
+                 exchange.getResponseBody()) {
+
+            os.write(respuesta);
+        }
+    }
+
+
+    // =========================================================
+    // TIPOS DE ARCHIVO
+    // =========================================================
+
+    private static String obtenerTipoContenido(
+        String archivo
+    ) {
+
+        String nombre =
+            archivo.toLowerCase();
+
+        if (nombre.endsWith(".html")) {
+            return "text/html; charset=UTF-8";
+        }
+
+        if (nombre.endsWith(".css")) {
+            return "text/css; charset=UTF-8";
+        }
+
+        if (nombre.endsWith(".js")) {
+            return "application/javascript; charset=UTF-8";
+        }
+
+        if (nombre.endsWith(".png")) {
+            return "image/png";
+        }
+
+        if (nombre.endsWith(".jpg") ||
+            nombre.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+
+        if (nombre.endsWith(".webp")) {
+            return "image/webp";
+        }
+
+        if (nombre.endsWith(".gif")) {
+            return "image/gif";
+        }
+
+        if (nombre.endsWith(".svg")) {
+            return "image/svg+xml";
+        }
+
+        if (nombre.endsWith(".mp3")) {
+            return "audio/mpeg";
+        }
+
+        if (nombre.endsWith(".wav")) {
+            return "audio/wav";
+        }
+
+        if (nombre.endsWith(".ogg")) {
+            return "audio/ogg";
+        }
+
+        if (nombre.endsWith(".mp4")) {
+            return "video/mp4";
+        }
+
+        return "application/octet-stream";
+    }
 }
+```
