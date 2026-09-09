@@ -1,3 +1,5 @@
+const API_URL = "https://traductor-b8ln.onrender.com";
+
 let audioActual = "";
 let imagenActual = "";
 
@@ -28,7 +30,7 @@ function limpiarTraduccion() {
 
 async function cargarCategorias() {
 
-    const respuesta = await fetch("http://localhost:8000/categorias");
+    const respuesta = await fetch(`${API_URL}/categorias`);
 
     const categorias = await respuesta.json();
 
@@ -54,6 +56,7 @@ async function cargarCategorias() {
         limpiarTraduccion();
 
         const imagen = document.getElementById("imagenPalabra");
+
         imagen.src = "";
         imagen.style.display = "none";
 
@@ -68,7 +71,7 @@ async function cargarPalabras() {
     const idCategoria = document.getElementById("categoria").value;
 
     const respuesta = await fetch(
-        `http://localhost:8000/palabras?idCategoria=${idCategoria}`
+        `${API_URL}/palabras?idCategoria=${idCategoria}`
     );
 
     const palabras = await respuesta.json();
@@ -97,7 +100,7 @@ async function mostrarImagen() {
     const idPalabra = document.getElementById("palabras").value;
 
     const respuesta = await fetch(
-        `http://localhost:8000/traducir?idPalabra=${idPalabra}`
+        `${API_URL}/traducir?idPalabra=${idPalabra}`
     );
 
     const datos = await respuesta.json();
@@ -131,12 +134,13 @@ async function traducir() {
     const idPalabra = document.getElementById("palabras").value;
 
     const respuesta = await fetch(
-        `http://localhost:8000/traducir?idPalabra=${idPalabra}`
+        `${API_URL}/traducir?idPalabra=${idPalabra}`
     );
 
     const datos = await respuesta.json();
 
-    document.getElementById("textoTraducido").textContent = datos.traduccion;
+    document.getElementById("textoTraducido").textContent =
+        datos.traduccion;
 
     audioActual = datos.audio;
     imagenActual = datos.imagen;
@@ -173,7 +177,9 @@ document.addEventListener("click", function(e) {
             audioActual !== "NULL"
         ) {
 
-            const audio = new Audio("AUDIOS/" + audioActual);
+            const audio = new Audio(
+                "AUDIOS/" + audioActual
+            );
 
             audio.play();
 
