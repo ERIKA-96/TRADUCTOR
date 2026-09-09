@@ -1,4 +1,3 @@
-```dockerfile
 FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
@@ -28,4 +27,3 @@ RUN javac -cp "postgresql-42.7.13.jar" Conexion.java Servidor.java
 
 # Iniciar servidor
 CMD ["java", "-cp", ".:postgresql-42.7.13.jar", "Servidor"]
-```
